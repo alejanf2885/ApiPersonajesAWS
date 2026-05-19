@@ -7,16 +7,42 @@ var builder = WebApplication.CreateBuilder(args);
 
 string connectionString = builder.Configuration.GetConnectionString("AWS");
 
+// Repositorios
 builder.Services.AddTransient<RepositorieTelevision>();
 
-builder.Services.AddDbContext<TelevisionContext>(options => options.UseMySQL(connectionString));
+// DB
+builder.Services.AddDbContext<TelevisionContext>(options =>
+    options.UseMySQL(connectionString)
+);
 
+// Controllers + OpenAPI
 builder.Services.AddControllers();
 builder.Services.AddOpenApi();
 
+// CORS (permitir todo - SOLO desarrollo)
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("AllowAll",
+        policy =>
+        {
+            policy.AllowAnyOrigin()
+                  .AllowAnyHeader()
+                  .AllowAnyMethod();
+        });
+});
+
 var app = builder.Build();
 
+// Pipeline
+app.UseHttpsRedirection();
+
+app.UseRouting();
+
+// CORS aquí
+app.UseCors("AllowAll");
+
 app.MapControllers();
+
 app.MapOpenApi();
 app.MapScalarApiReference();
 
@@ -28,7 +54,5 @@ app.MapGet(
         return Task.CompletedTask;
     }
 );
-
-app.UseHttpsRedirection();
 
 app.Run();
